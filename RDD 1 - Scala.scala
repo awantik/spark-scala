@@ -140,4 +140,111 @@ rdd1.top(4)
 
 // COMMAND ----------
 
+// MAGIC %md
+// MAGIC <h3>Understanding lineage</h3>
+
+// COMMAND ----------
+
+val a = sc.parallelize( 1 to 5, 4)
+
+// COMMAND ----------
+
+a.flatMap( x => List(x,x,x)).collect
+
+// COMMAND ----------
+
+val z = sc.parallelize(List("red","blue","green","yellow"))
+
+// COMMAND ----------
+
+z.map( x => (x.length,x)).keys.collect
+
+// COMMAND ----------
+
+z.map( x => (x.length,x)).values.collect
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC <h3>Transformations on pair RDDs</h3>
+
+// COMMAND ----------
+
+val a = sc.parallelize(List("black", "blue", "white", "green", "grey"), 2) 
+
+// COMMAND ----------
+
+val b = a.keyBy(_.length)
+
+// COMMAND ----------
+
+b.collect
+
+// COMMAND ----------
+
+a.keyBy(x => x.length).groupByKey.collect
+
+// COMMAND ----------
+
+val a = sc.parallelize(List("blue", "green", "orange"), 3) 
+val b = a.keyBy(_.length)
+
+
+// COMMAND ----------
+
+val c = sc.parallelize(List("black", "white", "grey"), 3) 
+val d = c.keyBy(_.length)
+
+// COMMAND ----------
+
+b.leftOuterJoin(d).collect
+
+// COMMAND ----------
+
+b.collect
+
+// COMMAND ----------
+
+d.collect
+
+// COMMAND ----------
+
+//rightOuterJoin
+//fullOuterJoin
+
+// COMMAND ----------
+
+b.collect
+
+// COMMAND ----------
+
+b.reduceByKey(_ + _).collect
+
+// COMMAND ----------
+
+val c = sc.parallelize(List("black", "white", "grey","green")) 
+val d = c.keyBy(_.length)
+
+// COMMAND ----------
+
+d.reduceByKey(_ + _).collect
+
+// COMMAND ----------
+
+val z = sc.parallelize(List(1,2,7,4,30,6), 3) 
+
+// COMMAND ----------
+
+z.glom.collect
+//z.aggregate(0)()
+
+// COMMAND ----------
+
+// 1st arg func - takes 2 arg, returns 1, This gets executed for each partition
+// 2nd arg fun - take 2 results iteratively from all partitions & retuns the result
+// the zero value will be used for each operation
+z.aggregate(0)(math.max( _ , _ ), _ + _ )
+
+// COMMAND ----------
+
 

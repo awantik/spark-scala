@@ -165,7 +165,154 @@ display(uniondf)
 
 // COMMAND ----------
 
-uniondf.write.parquet("/tmp/myfile.parquet")
+uniondf.write.parquet("/tmp/myfile1.parquet")
+
+// COMMAND ----------
+
+val rdd = sc.parallelize(List(("Awi",5),("Bwi",8)))
+
+// COMMAND ----------
+
+val parquetDF = spark.read.parquet("/tmp/myfile1.parquet")
+
+// COMMAND ----------
+
+display(parquetDF)
+
+// COMMAND ----------
+
+val eplodeDF = parquetDF.explode($"employees"){
+  case Row(employee: Seq[Row]) => employee.map{ employee => 
+    val firstName = employee(0).asInstanceOf[String]
+    val lastname = employee(1).asInstanceOf[String]
+    val email = employee(2).asInstanceOf[String]
+    val salary = employee(3).asInstanceOf[Int]
+    Employee(firstName, lastname, email, salary)
+  
+  }
+}
+
+// COMMAND ----------
+
+display(eplodeDF)
+
+// COMMAND ----------
+
+val filterDF = eplodeDF.filter($"firstName" === "xiangrui" || $"firstName" === "michael").sort($"lastname".asc)
+
+// COMMAND ----------
+
+display(filterDF)
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC <p>Replace null by -</p> 
+
+// COMMAND ----------
+
+val naFunctions = eplodeDF.na
+val nonNullDF = naFunctions.fill("--")
+display(nonNullDF)
+
+// COMMAND ----------
+
+val filterNonNullDF = nonNullDF.filter(!($"firstName" === "--" || $"firstName" === "--")).sort($"email".asc)
+
+// COMMAND ----------
+
+display(filterNonNullDF)
+
+// COMMAND ----------
+
+import org.apache.spark.sql.functions._
+
+// COMMAND ----------
+
+
+val countDistinctDF = eplodeDF.select($"firstName").groupBy($"firstName").agg(count($"firstName"))
+display(countDistinctDF)
+
+// COMMAND ----------
+
+val countDistinctDF = eplodeDF.select($"firstName").groupBy().agg(count($"firstName"))
+display(countDistinctDF)
+
+// COMMAND ----------
+
+val d_1 = nonNullDF.registerTempTable("zeke_df")
+spark.sql("""
+ SELECT * 
+ FROM zeke_df
+""")
+
+// COMMAND ----------
+
+display(nonNullDF)
+
+// COMMAND ----------
+
+nonNullDF.createOrReplaceTempView("zeke5")
+
+// COMMAND ----------
+
+val d_res = spark.sql("""
+SELECT firstName, lastName as
+FROM zeke5
+""")
+
+// COMMAND ----------
+
+display(d_res)
+
+// COMMAND ----------
+
+nonNullDF.describe("salary").show()
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC <h2>Flattening</h2>
+
+// COMMAND ----------
+
+()
+
+// COMMAND ----------
+
+val veryNestedDF = Seq(("1", (2, (3, 4)))).toDF()
+
+// COMMAND ----------
+
+display(veryNestedDF)
+
+// COMMAND ----------
+
+import org.apache.spark.sql._
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
+
+// COMMAND ----------
+
+implicit class DataFrameFlattener( df: DataFrame){
+  def flattenSchema: DataFrame = {
+    df.select(flatten(Nil, df.schema) : _*)
+  }
+  
+  def flatten(path: Seq[String], schema: DataType) : Seq[Column]= schema match {
+    case s: StructType => s.fields.flatMap( f=> flatten(path :+ f.name, f.dataType ))
+    case other => col(path.map(n => s"`$n`").mkString(".")).as(path.mkString(".")) :: Nil
+ }
+  
+}
+
+// COMMAND ----------
+
+display(veryNestedDF.flattenSchema)
+
+// COMMAND ----------
+
+val dfnew = DataFrameFlattener(veryNestedDF)
 
 // COMMAND ----------
 

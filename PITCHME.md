@@ -12,4 +12,4 @@ An application architecture for React
 
 ---
 
-![Flux Explained](https://facebook.github.io/flux/img/flux-simple-f8-diagram-explained-1300w.png)
+![Flux Explained](https://github.com/zekelabs/machine-learning-for-beginners/blob/master/awantik.jpg?raw=true)
